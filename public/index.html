@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MegaDeals | Premium E-Commerce</title>
+    <style>
+        :root {
+            --primary: #ff4757;
+            --secondary: #2f3542;
+            --light: #f1f2f6;
+            --white: #ffffff;
+            --success: #2ed573;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--light); color: var(--secondary); }
+        
+        /* Navbar */
+        nav { background: var(--secondary); color: var(--white); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        nav .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        nav .auth-btn { background: var(--primary); color: var(--white); border: none; padding: 0.5rem 1.2rem; border-radius: 4px; cursor: pointer; font-weight: 600; }
+        
+        /* Hero Section */
+        .hero { background: linear-gradient(135deg, #747d8c, #2f3542); color: var(--white); padding: 3rem 2rem; text-align: center; }
+        .hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        
+        /* Product Grid */
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; }
+        .card { background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; position: relative; }
+        .card:hover { transform: translateY(-5px); }
+        .card-badge { position: absolute; top: 10px; left: 10px; background: var(--primary); color: var(--white); padding: 0.2rem 0.6rem; font-size: 0.8rem; font-weight: bold; border-radius: 4px; }
+        .card-img { height: 200px; background: #ced6e0; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+        .card-body { padding: 1.5rem; }
+        .card-title { font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .price-tag { font-size: 1.4rem; color: var(--primary); font-weight: bold; margin: 0.5rem 0; }
+        .buy-btn { width: 100%; background: var(--secondary); color: var(--white); border: none; padding: 0.7rem; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .buy-btn:hover { background: #57606f; }
+
+        /* Auth Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--white); padding: 2.5rem; border-radius: 8px; width: 100%; max-width: 400px; position: relative; }
+        .close-modal { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 600; }
+        .form-group input { width: 100%; padding: 0.7rem; border: 1px solid #ccc; border-radius: 4px; }
+        .submit-btn { width: 100%; background: var(--primary); color: var(--white); border: none; padding: 0.8rem; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">⚡ MegaDeals</div>
+        <button class="auth-btn" id="authBtn" onclick="openModal()">Login / Register</button>
+    </nav>
+
+    <div class="hero">
+        <h1>Lightning Deals of the Day</h1>
+        <p>Production-Grade AWS Backend Testing Suite</p>
+    </div>
+
+    <div class="container">
+        <div class="grid" id="productGrid">
+            </div>
+    </div>
+
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 style="margin-bottom: 1.5rem;" id="modalTitle">Account Login</h2>
+            <form id="authForm">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" required placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="submit-btn" id="submitBtn">Proceed</button>
+            </form>
+            <p style="margin-top:1rem; text-align:center; font-size:0.9rem;">
+                <a href="#" id="toggleAuth" onclick="toggleAuthMode(event)">Don't have an account? Register</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let isLoginMode = true;
+        let authToken = null;
+        let userEmail = null;
+
+        // Mock Initial Data - In Production, this loads from the GET /products API
+        const products = [
+            { id: 1, name: "Wireless Noise-Canceling Headphones", price: "$149", icon: "🎧", badge: "60% OFF" },
+            { id: 2, name: "Minimalist Smart Watch v4", price: "$199", icon: "⌚", badge: "Hot Deal" },
+            { id: 3, name: "Ultra-Wide Gaming Monitor 34\"", price: "$349", icon: "🖥️", badge: "Limited Stock" }
+        ];
+
+        // Render Products
+        const grid = document.getElementById('productGrid');
+        products.forEach(p => {
+            grid.innerHTML += `
+                <div class="card">
+                    <div class="card-badge">${p.badge}</div>
+                    <div class="card-img">${p.icon}</div>
+                    <div class="card-body">
+                        <h3 class="card-title">${p.name}</h3>
+                        <div class="price-tag">${p.price}</div>
+                        <button class="buy-btn" onclick="placeOrder(${p.id})">Claim Deal</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        function openModal() { document.getElementById('authModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('authModal').style.display = 'none'; }
+        
+        function toggleAuthMode(e) {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            document.getElementById('modalTitle').innerText = isLoginMode ? "Account Login" : "Create Account";
+            document.getElementById('toggleAuth').innerText = isLoginMode ? "Don't have an account? Register" : "Already have an account? Login";
+        }
+
+        // Handle Login / Registration API Communication
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const endpoint = isLoginMode ? '/api/login' : '/api/register';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.token || 'mock-jwt-token';
+                    userEmail = email;
+                    document.getElementById('authBtn').innerText = `Hi, ${email.split('@')[0]}`;
+                    closeModal();
+                    alert(isLoginMode ? "Logged in successfully!" : "Account created successfully! You can now shop.");
+                } else {
+                    alert(data.error || "Authentication failed");
+                }
+            } catch (err) {
+                alert("API connection error. Check if your EC2 App Server backend is running.");
+            }
+        });
+
+        // Handle Order Placement API Communication
+        async function placeOrder(productId) {
+            if (!userEmail) {
+                alert("Please log in first to purchase deals!");
+                openModal();
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId, quantity: 1, customerEmail: userEmail })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`🎉 Order successful! Order ID: ${data.orderId}\nAn invoice has been compiled in AWS S3 and notifications pushed via AWS SNS.`);
+                } else {
+                    alert("Order placement failed.");
+                }
+            } catch (err) {
+                alert("Backend connectivity failure.");
+            }
+        }
+    </script>
+</body>
+</html>
